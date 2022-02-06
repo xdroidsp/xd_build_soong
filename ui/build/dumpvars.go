@@ -137,21 +137,14 @@ func dumpMakeVars(ctx Context, config Config, goals, vars []string, write_soong_
 
 // Variables to print out in the top banner
 var BannerVars = []string{
-	"XDROID_VERSION",
-	"XDROID_BUILD_VERSION",
-	"XDROID_BUILD_NUMBER",
-	"PLATFORM_VERSION_CODENAME",
 	"PLATFORM_VERSION",
+	"XDROID_REVISION",
+	"XDROID_BUILD_NUMBER",
+	"BUILD_ID",
 	"TARGET_PRODUCT",
 	"TARGET_BUILD_VARIANT",
 	"TARGET_BUILD_UNBUNDLED",
-	"TARGET_ARCH",
-	"TARGET_ARCH_VARIANT",
-	"TARGET_CPU_VARIANT",
-	"BUILD_ID",
 	"PRODUCT_SOONG_NAMESPACES",
-	"SOONG_SDK_SNAPSHOT_PREFER",
-	"SOONG_SDK_SNAPSHOT_VERSION",
 }
 
 func Banner(make_vars map[string]string) string {
