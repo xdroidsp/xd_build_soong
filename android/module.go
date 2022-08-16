@@ -112,7 +112,6 @@ type EarlyModuleContext interface {
 	SocSpecific() bool
 	ProductSpecific() bool
 	SystemExtSpecific() bool
-        ProductOverlaySpecific() bool
 	Platform() bool
 
 	Config() Config
@@ -802,9 +801,6 @@ type commonProperties struct {
 	// (or /system/system_ext if system_ext partition does not exist).
 	System_ext_specific *bool
 
-	// When set to true, it is installed into  /product/vendor_overlay
-	Product_overlay_specific *bool
-
 	// Whether this module is installed to recovery partition
 	Recovery *bool
 
@@ -1067,7 +1063,6 @@ const (
 	socSpecificModule
 	productSpecificModule
 	systemExtSpecificModule
-	productOverlaySpecificModule
 )
 
 func (k moduleKind) String() string {
@@ -1082,8 +1077,6 @@ func (k moduleKind) String() string {
 		return "product-specific"
 	case systemExtSpecificModule:
 		return "systemext-specific"
-	case productOverlaySpecificModule:
-		return "productoverlay-specific"
 	default:
 		panic(fmt.Errorf("unknown module kind %d", k))
 	}
@@ -1793,7 +1786,7 @@ func (m *ModuleBase) HostCrossSupported() bool {
 }
 
 func (m *ModuleBase) Platform() bool {
-	return !m.DeviceSpecific() && !m.SocSpecific() && !m.ProductSpecific() && !m.SystemExtSpecific() && !m.ProductOverlaySpecific()
+	return !m.DeviceSpecific() && !m.SocSpecific() && !m.ProductSpecific() && !m.SystemExtSpecific()
 }
 
 func (m *ModuleBase) DeviceSpecific() bool {
@@ -1849,12 +1842,8 @@ func (m *ModuleBase) PartitionTag(config DeviceConfig) string {
 		if config.SystemExtPath() == "system_ext" {
 			partition = "system_ext"
 		}
-        }
-        return partition
-}
-
-func (m *ModuleBase) ProductOverlaySpecific() bool {
-	return Bool(m.commonProperties.Product_overlay_specific)
+	}
+	return partition
 }
 
 func (m *ModuleBase) Enabled() bool {
@@ -2121,7 +2110,6 @@ func determineModuleKind(m *ModuleBase, ctx blueprint.EarlyModuleContext) module
 	var deviceSpecific = Bool(m.commonProperties.Device_specific)
 	var productSpecific = Bool(m.commonProperties.Product_specific)
 	var systemExtSpecific = Bool(m.commonProperties.System_ext_specific)
-	var productOverlaySpecific = Bool(m.commonProperties.Product_overlay_specific)
 
 	msg := "conflicting value set here"
 	if socSpecific && deviceSpecific {
@@ -2137,12 +2125,12 @@ func determineModuleKind(m *ModuleBase, ctx blueprint.EarlyModuleContext) module
 		}
 	}
 
-	if productSpecific && (systemExtSpecific || productOverlaySpecific) {
+	if productSpecific && systemExtSpecific {
 		ctx.PropertyErrorf("product_specific", "a module cannot be specific to product and system_ext at the same time.")
 		ctx.PropertyErrorf("system_ext_specific", msg)
 	}
 
-	if (socSpecific || deviceSpecific) && (productSpecific || systemExtSpecific || productOverlaySpecific) {
+	if (socSpecific || deviceSpecific) && (productSpecific || systemExtSpecific) {
 		if productSpecific {
 			ctx.PropertyErrorf("product_specific", "a module cannot be specific to SoC or device and product at the same time.")
 		} else {
@@ -2167,8 +2155,6 @@ func determineModuleKind(m *ModuleBase, ctx blueprint.EarlyModuleContext) module
 		return productSpecificModule
 	} else if systemExtSpecific {
 		return systemExtSpecificModule
-	} else if productOverlaySpecific {
-		return productOverlaySpecificModule
 	} else if deviceSpecific {
 		return deviceSpecificModule
 	} else if socSpecific {
@@ -3072,7 +3058,6 @@ func (m *ModuleBase) MakeAsPlatform() {
 	m.commonProperties.Soc_specific = boolPtr(false)
 	m.commonProperties.Product_specific = boolPtr(false)
 	m.commonProperties.System_ext_specific = boolPtr(false)
-        m.commonProperties.Product_overlay_specific = boolPtr(false)
 }
 
 func (m *ModuleBase) MakeAsSystemExt() {
@@ -3081,7 +3066,6 @@ func (m *ModuleBase) MakeAsSystemExt() {
 	m.commonProperties.Soc_specific = boolPtr(false)
 	m.commonProperties.Product_specific = boolPtr(false)
 	m.commonProperties.System_ext_specific = boolPtr(true)
-        m.commonProperties.Product_overlay_specific = boolPtr(false)
 }
 
 // IsNativeBridgeSupported returns true if "native_bridge_supported" is explicitly set as "true"
@@ -3099,10 +3083,6 @@ func (m *moduleContext) InstallInTestcases() bool {
 
 func (m *moduleContext) InstallInSanitizerDir() bool {
 	return m.module.InstallInSanitizerDir()
-}
-
-func (e *earlyModuleContext) ProductOverlaySpecific() bool {
-	return e.kind == productOverlaySpecificModule
 }
 
 func (m *moduleContext) InstallInRamdisk() bool {
