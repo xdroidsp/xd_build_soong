@@ -258,6 +258,10 @@ org\.chromium\.arc\..*
 # Lineage adds
 vendor\.lineage.*
 
+# xdroidOSS adds
+org\.xd
+org\.xd\..*
+
 # NV adds
 com\.nvidia
 com\.nvidia\..*
